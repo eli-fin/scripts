@@ -15,9 +15,11 @@ Usage:
    to view the class and it's member type/name/info:  HelperMethods.PrintClassAndMemberInfo(cls)
    to view the class and member attributes:           HelperMethods.PrintAttributeNames(cls)
    
-   the fields and their names basically match the documentation above, so you should be able to
-   access all the information you want and build scripts on top of this
+   the fields and their names basically match the oracle documentation above, so you should be able to
+   access all the information you want about the class and build scripts on top of this
    
+   You can also use this as a script to view the output of PrintClassAndMemberInfo and PrintAttributeNames.
+   Just pass a class file as an argument: <script> x.class
    
 Author: Eli Finkel - eyfinkel@gmail.com
 '''
@@ -175,8 +177,7 @@ class cp_info(object):
             assert 0 < self.descriptor_index < cp_info_count, 'Invalid descriptor_index'
         elif self.tag == 18:
             self.type = 'InvokeDynamic'
-            self.bootstrap_method_attr_index = Util.readUnsigned(readable, 2)
-            assert 0 < self.bootstrap_method_attr_index < cp_info_count, 'Invalid bootstrap_method_attr_index'
+            self.bootstrap_method_attr_index = Util.readUnsigned(readable, 2) # must be a valid index to bootstrap_methods, but we can't verify this now
             self.name_and_type_index = Util.readUnsigned(readable, 2)
             assert 0 < self.name_and_type_index < cp_info_count, 'Invalid name_and_type_index'
         else:
@@ -338,7 +339,7 @@ class Util(object):
     def readSigned(readable, length):
         ''' Read a signed variable length number from a big-endian stream '''
         ret = Util.readUnsigned(readable, length)
-        if ret >= (2**(8*length))/2:
+        if ret >> ((8*length)-1):
             ret = -((2**(8*length))-ret)
         return ret
     
@@ -421,7 +422,8 @@ class HelperMethods:
             attrName = cls.constant_pool[attr.attribute_name_index-1].bytes
             print(f'{className} attribute: type={attrName}, length={attr.attribute_length}')
         
-        print()
+        if cls.attributes:
+            print()
         
         for field in cls.fields:
             fieldName = cls.constant_pool[field.name_index-1].bytes
@@ -429,7 +431,8 @@ class HelperMethods:
                 attrName = cls.constant_pool[attr.attribute_name_index-1].bytes
                 print(f'\t{className}.{fieldName} attribute: type={attrName}, length={attr.attribute_length}')
         
-        print()
+        if cls.fields:
+            print()
         
         for method in cls.methods:
             methodName = cls.constant_pool[method.name_index-1].bytes
@@ -473,7 +476,8 @@ class HelperMethods:
         print()
         for f in fields:
             print('\t' + f)
-        print()
+        if fields:
+            print()
         for m in methods:
             print('\t' + m)
         
@@ -548,9 +552,8 @@ class HelperMethods:
     
     @staticmethod
     def MajorClassVersionToJavaVersion(version):
-        if 45 <= version <= 58:
-            return 'Java ' + str(version-45+1)
-        return 'Java <unknown version>'
+        assert 45 <= version <= 58, 'unknown java version'
+        return 'Java ' + str(version-45+1)
     
     
     @staticmethod
@@ -595,3 +598,16 @@ class HelperMethods:
         for cp_info in cls.constant_pool:
             if cp_info and cp_info.type == 'Utf8':
                 print(cp_info)
+
+
+if __name__ == '__main__':
+    import sys
+
+    if len(sys.argv) < 2:
+        print(f'usage: {sys.argv[0]} x.class')
+        exit(1)
+
+    cls = ClassFile(sys.argv[1])
+    HelperMethods.PrintClassAndMemberInfo(cls)
+    print('\n----')
+    HelperMethods.PrintAttributeNames(cls)
