@@ -25,7 +25,8 @@ def SetVCPFeature(new_source):
     Sets the input source to the new value
     (Try values 0-15)
     """
-    physHMon, physMonInfoArr, physMonArrSize = monitorLib.get_handle(win_hwnd)
+    HMon = monitorLib.get_handle(win_hwnd)
+    physHMon, physMonInfoArr, physMonArrSize = monitorLib.get_physical_handle(HMon)
     if not SetVCPFeature_impl(physHMon, VCP_INPUT_SELECT_CODE, new_source):
         raise WindowsError('Failed to set VCP Feature')
     monitorLib.destroy_handle(physMonInfoArr, physMonArrSize)
