@@ -24,6 +24,7 @@ class MessageWindow():
     __UnregisterClassW          = windll.user32.UnregisterClassW
     __UnregisterClassW.argtypes = [c_voidp, c_voidp]
     __CreateWindowExW           = windll.user32.CreateWindowExW
+    __CreateWindowExW.argtypes  = [wintypes.DWORD, c_voidp, c_voidp, wintypes.DWORD, c_int, c_int, c_int, c_int, c_voidp, c_voidp, c_voidp, c_voidp]
     __DestroyWindow             = windll.user32.DestroyWindow
     __DefWindowProcW            = windll.user32.DefWindowProcW
     __DefWindowProcW.argtypes   = [wintypes.HWND, ctypes.c_uint, wintypes.WPARAM, wintypes.LPARAM]
@@ -59,7 +60,7 @@ class MessageWindow():
         ret, err = self.__RegisterClassExW(byref(self.__win_class)), self.__GetLastError()
         if ret == 0:
             raise ctypes.WinError(err)
-        self.hWnd, err = self.__CreateWindowExW(None, self.__win_class.lpszClassName, None, None, None, None, None, None, self.HWND_MESSAGE, None, None, None),\
+        self.hWnd, err = self.__CreateWindowExW(0, self.__win_class.lpszClassName, None, 0, 0, 0, 0, 0, self.HWND_MESSAGE, None, None, None),\
                          self.__GetLastError()
         if self.hWnd == 0:
             raise ctypes.WinError(err)
