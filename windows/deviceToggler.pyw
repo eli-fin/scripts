@@ -29,7 +29,6 @@ def main():
     my_icon_title = 'My device toggler'
     device_name = 'HID-compliant touch screen'
     my_icon_tip = f'Device toggler for "{device_name}"\n(double click to toggle,\n double rclick to exit)'
-    is_enabled = True
     
     def WndProc(hWnd, uMsg, wParam, lParam):
         nonlocal is_enabled
@@ -63,6 +62,7 @@ def main():
         device = (d for d in manager.enumerate() if device_name == manager.get_device_name(d)).__next__()
     except StopIteration:
         raise Exception(f'Can\'t find device "{device_name}"')
+    is_enabled = manager.get_device_status(device)
     window=MessageWindow(WndProc)
     icon=NotifyIcon(my_icon_path, window.hWnd, 0, my_app_message_id, my_icon_tip, 'Starting', my_icon_title)
     

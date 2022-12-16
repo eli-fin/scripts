@@ -3,7 +3,7 @@ Author: Eli Finkel - eyfinkel@gmail.com
 '''
 
 import ctypes
-from ctypes import wintypes, windll, c_voidp, c_wchar, byref, sizeof
+from ctypes import wintypes, windll, c_voidp, c_wchar, c_ulong, byref, sizeof
 from winapi_lib.winapi_structs import GUID, SP_DEVINFO_DATA, SP_PROPCHANGE_PARAMS
 
 class DeviceManager():
@@ -27,6 +27,8 @@ class DeviceManager():
     __SetClassInstallParamsW.argtypes       = [c_voidp, c_voidp, c_voidp, wintypes.DWORD]
     __ChangeState                           = windll.setupapi.SetupDiChangeState
     __ChangeState.argtypes                  = [c_voidp, c_voidp]
+    __Get_DevNode_Status                    = windll.cfgmgr32.CM_Get_DevNode_Status
+    __Get_DevNode_Status.argtypes           = [c_voidp, c_voidp, c_ulong, c_ulong]
     
     def __init__(self):
         # Get the HDEVINFO handle
@@ -75,6 +77,18 @@ class DeviceManager():
         if ret != 1:
             raise ctypes.WinError(err)
         return buf.value
+    
+    def get_device_status(self, device):
+        '''
+        Get device status (enabled or disabled)
+        '''
+        assert type(device) == SP_DEVINFO_DATA, 'other must be a SP_DEVINFO_DATA, not '+str(type(device).__name__)
+        out_status = ctypes.c_long()
+        out_problem_number = ctypes.c_long()
+        ret = self.__Get_DevNode_Status(byref(out_status), byref(out_problem_number), device.DevInst, 0)
+        if ret != 0:
+            raise OSError('CM error ' + str(ret))
+        return bool(out_status.value & 0x00000008) # DN_STARTED
     
     def enable_device(self, device):
         '''
