@@ -40,7 +40,7 @@ class NotifyIcon():
     
     def __init__(self, icon_path, hWnd, id, callback_id, tip, popup_info, popup_title):
         '''
-        param icon_path:    a path to a valid ico file to be used as an icon
+        param icon_path:    a path to a valid 32x32 ico file to be used as an icon
         param hWnd:         the window that will receive the notifications
         param id:           a user defined id for this notification icon (to allow more than one per window)
         param callback_id:  a user defined id which is passed to the WndProc of the associated window
@@ -58,8 +58,8 @@ class NotifyIcon():
         assert type(popup_title) == str, 'popup_title must be an str, not '+str(type(popup_title).__name__)
 
         # Get icon
-        self.__icon,err = self.__LoadImageW(None, icon_path, self.IMAGE_ICON, 32, 32, self.LR_LOADFROMFILE),self.__GetLastError()
-        if self.__icon == None:
+        hIcon,err = self.__LoadImageW(None, icon_path, self.IMAGE_ICON, 32, 32, self.LR_LOADFROMFILE),self.__GetLastError()
+        if hIcon == None:
             raise ctypes.WinError(err)
         
         self.__ni_data = NOTIFYICONDATA()
@@ -68,7 +68,7 @@ class NotifyIcon():
         self.__ni_data.uID = id
         self.__ni_data.uFlags = self.NIF_ICON | self.NIF_TIP | self.NIF_INFO | self.NIF_MESSAGE | self.NIF_REALTIME
         self.__ni_data.uCallbackMessage = callback_id
-        self.__ni_data.hIcon = self.__icon
+        self.__ni_data.hIcon = hIcon
         self.__ni_data.szTip = tip
         self.__ni_data.szInfo = popup_info
         self.__ni_data.uVersion = self.NOTIFYICON_VERSION;
@@ -89,7 +89,7 @@ class NotifyIcon():
         if ret != 1:
             raise ctypes.WinError(err)
         # destroy the icon
-        ret, err = self.__DestroyIcon(self.__icon),self.__GetLastError()
+        ret, err = self.__DestroyIcon(self.__ni_data.hIcon),self.__GetLastError()
         if ret == 0:
             raise ctypes.WinError(err)
         
@@ -110,4 +110,25 @@ class NotifyIcon():
         if ret != 1:
             raise ctypes.WinError(err)
     
-    
+    def update_icon(self, icon_path):
+        '''
+        param icon_path:    a path to a valid 32x32 ico file to be used as an icon
+        '''
+        assert type(icon_path)   == str, 'icon_path must be an str, not '+str(type(icon_path).__name__)
+        
+        # Get icon
+        hIcon,err = self.__LoadImageW(None, icon_path, self.IMAGE_ICON, 32, 32, self.LR_LOADFROMFILE),self.__GetLastError()
+        if hIcon == None:
+            raise ctypes.WinError(err)
+        
+        old_hIcon = self.__ni_data.hIcon
+        self.__ni_data.hIcon = hIcon
+        
+        ret, err = self.__Shell_NotifyIconW(self.NIM_MODIFY, byref(self.__ni_data)),self.__GetLastError()
+        if ret != 1:
+            raise ctypes.WinError(err)
+        
+        # destroy the icon
+        ret, err = self.__DestroyIcon(old_hIcon),self.__GetLastError()
+        if ret == 0:
+            raise ctypes.WinError(err)

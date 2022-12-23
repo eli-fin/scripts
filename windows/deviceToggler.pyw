@@ -25,7 +25,8 @@ def main():
     assert_admin()
     
     my_app_message_id = 0x8000+1 # WM_APP+1
-    my_icon_path = os.path.dirname(os.path.realpath(__file__)) + '/_icons/touchscreen.ico' # Relative to script dir
+    my_icon_path_on = os.path.dirname(os.path.realpath(__file__)) + '/_icons/touchscreen-on.ico' # Relative to script dir
+    my_icon_path_off = os.path.dirname(os.path.realpath(__file__)) + '/_icons/touchscreen-off.ico' # Relative to script dir
     my_icon_title = 'My device toggler'
     device_name = 'HID-compliant touch screen'
     my_icon_tip = f'Device toggler for "{device_name}"\n(double click to toggle,\n double rclick to exit)'
@@ -39,9 +40,11 @@ def main():
                     if is_enabled:
                         manager.disable_device(device)
                         icon.popup('Disabling', my_icon_title)
+                        icon.update_icon(my_icon_path_off)
                     else:
                         manager.enable_device(device)
                         icon.popup('Enabling', my_icon_title)
+                        icon.update_icon(my_icon_path_on)
                     is_enabled = not is_enabled
                 
                 elif lParam == 0x206: # WM_RBUTTONDBLCLK
@@ -64,7 +67,7 @@ def main():
         raise Exception(f'Can\'t find device "{device_name}"')
     is_enabled = manager.get_device_status(device)
     window=MessageWindow(WndProc)
-    icon=NotifyIcon(my_icon_path, window.hWnd, 0, my_app_message_id, my_icon_tip, 'Starting', my_icon_title)
+    icon=NotifyIcon(my_icon_path_on if is_enabled else my_icon_path_off, window.hWnd, 0, my_app_message_id, my_icon_tip, 'Starting', my_icon_title)
     
     window.loop()
     
