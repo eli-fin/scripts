@@ -4,7 +4,7 @@ A wrapper class to get a physical monitor handle (will fallback on wmi if winapi
 Author: Eli Finkel - eyfinkel@gmail.com
 '''
 
-from ctypes import windll, Structure, c_void_p, c_wchar, c_ulong, byref
+from ctypes import windll, Structure, c_void_p, c_wchar, c_ulong, byref, WinError
 
 class monitorLib():
     """
@@ -62,13 +62,13 @@ class monitorLib():
         # get size of physical monitor array for an hMonitor
         ret,err = cls.NumOfPhysMonFromH(HMon, byref(physMonArrSize)), cls.LastError()
         if not ret:
-            raise WindowsError('Failed to get number of monitors - ' + str(err))
+            raise WindowsError('Failed to get number of monitors', WinError(err))
         # define an array by that size (first create a class of the array, then an instance)
         physMonInfoArr = (PHYSICAL_MONITOR * physMonArrSize.value)()
         # Get monitor info
         ret,err = cls.PhysMonFromH(HMon, physMonArrSize, byref(physMonInfoArr)), cls.LastError()
         if not ret:
-            raise WindowsError('Failed to get handle - ' + str(err))
+            raise WindowsError('Failed to get handle', WinError(err))
         
         # physical hMon for first physical screen
         physHMon = physMonInfoArr[0].hPhysicalMonitor
@@ -83,5 +83,5 @@ class monitorLib():
         # destroy physical monitor handle
         ret,err = cls.DestPhysMon(physMonArrSize, byref(physMonInfoArr)), cls.LastError()
         if not ret:
-            raise WindowsError('Failed to destroy handle - ' + str(err))
+            raise WindowsError('Failed to destroy handle', WinError(err))
     

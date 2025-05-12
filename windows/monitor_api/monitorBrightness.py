@@ -8,7 +8,7 @@ Usage: <script> [new percentage]
 Author: Eli Finkel - eyfinkel@gmail.com
 '''
 
-from ctypes import windll, c_ulong, byref
+from ctypes import windll, c_ulong, byref, WinError
 from monitorLib import monitorLib
 from sys import argv
 from os import system
@@ -31,7 +31,7 @@ def get_brightness():
     minBright, curBright, maxBright = c_ulong(), c_ulong(), c_ulong()
     ret,err = GetBright(physHMon, byref(minBright), byref(curBright), byref(maxBright)), GetLastError()
     if not ret:
-        raise WindowsError('Failed to get brightness - ' + str(err))
+        raise WindowsError('Failed to get brightness', WinError(err))
     monitorLib.destroy_handle(physMonInfoArr, physMonArrSize)
     return minBright, curBright, maxBright
     
@@ -44,7 +44,7 @@ def set_brightness(new_val):
     physHMon, physMonInfoArr, physMonArrSize = monitorLib.get_physical_handle(HMon)
     ret,err = SetBright(physHMon, new_val), GetLastError()
     if not ret:
-        raise WindowsError('Failed to set brightness - ' + str(err))
+        raise WindowsError('Failed to set brightness', WinError(err))
     monitorLib.destroy_handle(physMonInfoArr, physMonArrSize)
 
 
